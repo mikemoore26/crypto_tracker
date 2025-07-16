@@ -48,4 +48,5 @@ Built with HTML, Tailwind CSS, and vanilla JavaScript to showcase strong fronten
 ---
 
 ## 📂 Project Structure
+https://mikemoore26.github.io/crypto_tracker/index.html
 
