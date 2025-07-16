@@ -159,13 +159,23 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const sortOption = sortSelect.value;
-    if (sortOption === "price") {
-      filtered.sort((a, b) => b.current_price - a.current_price);
-    } else if (sortOption === "market_cap") {
-      filtered.sort((a, b) => b.market_cap - a.market_cap);
-    } else if (sortOption === "change") {
-      filtered.sort((a, b) => b.price_change_percentage_24h - a.price_change_percentage_24h);
-    }
+if (sortOption === "price") {
+  filtered.sort((a, b) => b.current_price - a.current_price);
+} else if (sortOption === "price_low") {
+  filtered.sort((a, b) => a.current_price - b.current_price);
+} else if (sortOption === "market_cap") {
+  filtered.sort((a, b) => b.market_cap - a.market_cap);
+} else if (sortOption === "market_cap_low") {
+  filtered.sort((a, b) => a.market_cap - b.market_cap);
+} else if (sortOption === "volume") {
+  filtered.sort((a, b) => b.total_volume - a.total_volume);
+} else if (sortOption === "change") {
+  filtered.sort((a, b) => b.price_change_percentage_24h - a.price_change_percentage_24h);
+} else if (sortOption === "change_low") {
+  filtered.sort((a, b) => a.price_change_percentage_24h - b.price_change_percentage_24h);
+} else if (sortOption === "name") {
+  filtered.sort((a, b) => a.name.localeCompare(b.name));
+}
 
     displayCoins(filtered);
   }
