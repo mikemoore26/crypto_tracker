@@ -162,6 +162,47 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  function getHypeScore(token) {
+    const volumeToMC = token.total_volume / (token.market_cap || 1); // avoid div/0
+    const priceMomentum = Math.abs(token.price_change_percentage_24h || 0) / 100;
+    const marketCapFactor = 1 - (Math.log10(token.market_cap || 1) / 20); // downweights mega caps
+
+    // Combine them with weights (tweak as needed)
+    return (volumeToMC * 0.5) + (priceMomentum * 0.3) + (marketCapFactor * 0.2);
+  }
+
+  function renderHypeLeaderboard(filtered) {
+    const hypeList = document.getElementById("hype-list");
+    hypeList.innerHTML = "";
+
+    const top = filtered.slice(0, 10); // Top 10 hyped tokens
+
+    top.forEach((token, i) => {
+      const volumeToMC = token.total_volume / (token.market_cap || 1);
+      const priceMomentum = Math.abs(token.price_change_percentage_24h || 0) / 100;
+      const marketCapFactor = 1 - (Math.log10(token.market_cap || 1) / 20);
+      const hypeScore = getHypeScore(token).toFixed(4);
+
+      const div = document.createElement("div");
+      div.className = "bg-gray-800 p-4 rounded-lg shadow";
+
+      div.innerHTML = `
+        <div class="flex items-center justify-between mb-1">
+          <h3 class="text-lg font-semibold text-green-300">${i + 1}. ${token.name} (${token.symbol.toUpperCase()})</h3>
+          <span class="text-sm text-gray-400">Hype Score: <strong>${hypeScore}</strong></span>
+        </div>
+        <div class="text-sm text-gray-400">
+          <p>Volume/Market Cap: ${volumeToMC.toFixed(4)}</p>
+          <p>Price Momentum: ${priceMomentum.toFixed(4)}</p>
+          <p>Size Penalty: ${marketCapFactor.toFixed(4)}</p>
+        </div>
+      `;
+
+      hypeList.appendChild(div);
+    });
+}
+
+
   function filterAndDisplay() {
     const searchTerm = searchInput.value.toLowerCase();
     let filtered = coins.filter(coin => coin.name.toLowerCase().includes(searchTerm));
@@ -205,10 +246,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // NEW: Hype Score (Volume / Market Cap)
       case "hype":
-        filtered.sort((a, b) => 
-          (b.total_volume / b.market_cap) - (a.total_volume / a.market_cap)
-        );
+        filtered.sort((a, b) => {
+          const scoreA = getHypeScore(a);
+          const scoreB = getHypeScore(b);
+          return scoreB - scoreA;
+        });
+
+        renderHypeLeaderboard(filtered);
         break;
+
 
       // NEW: Volatility Score (Abs(% change) * Volume)
       case "volatility":
