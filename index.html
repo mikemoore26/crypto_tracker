@@ -51,6 +51,7 @@
         <option value="market_cap">Market Cap (High → Low)</option>
         <option value="market_cap_low">Market Cap (Low → High)</option>
         <option value="volume">24h Volume (High → Low)</option>
+        <option value="volume_spike">Volume Spike (High → Low)</option>
         <option value="change">24h % Change (High → Low)</option>
         <option value="change_low">24h % Change (Low → High)</option>
         <option value="name">Name (A → Z)</option>
@@ -70,6 +71,25 @@
       Show Favorites Only
     </label>
   </div>
+
+  <!-- RSI Filter -->
+  <div class="max-w-md mx-auto mt-4 px-4">
+  <label class="flex items-center space-x-2 text-sm text-gray-300">
+    <input type="checkbox" id="rsi-filter" class="form-checkbox text-green-400" />
+    <span>Show only coins with price above RSI (Overbought)</span>
+  </label>
+</div>
+
+<!-- Volume Spike Filter -->
+   <div class="max-w-md mx-auto mt-4 px-4">
+
+    <label class="flex items-center space-x-2 text-sm text-gray-300 mt-4">
+      <input type="checkbox" id="volume-spike-filter" class="form-checkbox text-green-400" />
+      <span>Show only coins with sudden volume spike (x3+)</span>
+    </label>
+  </div>
+
+
 
   <!-- Coin List -->
   <section id="coin-list" class="max-w-4xl mx-auto px-4 py-8 grid gap-4 sm:grid-cols-2 md:grid-cols-3">

@@ -3,6 +3,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const searchInput = document.getElementById("search");
   const sortSelect = document.getElementById("sort");
   const favoritesFilter = document.getElementById("favorites-filter");
+  const rsiFilter = document.getElementById("rsi-filter");
   const loading = document.getElementById("loading");
   const modal = document.getElementById("portfolio-modal");
   const modalCoinName = document.getElementById("modal-coin-name");
@@ -15,11 +16,19 @@ document.addEventListener("DOMContentLoaded", () => {
   const portfolioTotal = document.getElementById("portfolio-total");
   const portfolioChange = document.getElementById("portfolio-change");
   const newsList = document.getElementById("news-list");
+  const volumeSpikeFilter = document.getElementById("volume-spike-filter");
+
 
   let selectedCoin = null;
   let portfolio = JSON.parse(localStorage.getItem("portfolio")) || {};
   let coins = [];
   let favorites = JSON.parse(localStorage.getItem('favorites')) || [];
+
+  rsiFilter.addEventListener("change", filterAndDisplay);
+  volumeSpikeFilter.addEventListener("change", filterAndDisplay);
+
+
+
 
   async function fetchCoins() {
     try {
@@ -61,18 +70,20 @@ document.addEventListener("DOMContentLoaded", () => {
           <h3 class="font-bold text-white mb-2">${article.title}</h3>
           <p class="text-gray-400">${article.description?.slice(0, 100) || ''}...</p>
           <p class="text-gray-500 mt-2 text-xs">${new Date(article.pubDate).toLocaleString()}</p>
-        </a>
-      `;
+        </a>`
+      ;
       newsList.appendChild(item);
     });
   }
 
   function displayCoins(data) {
+    
     coinList.innerHTML = "";
     if (!data.length) {
       coinList.innerHTML = "<p class='text-gray-400 text-center'>No coins found.</p>";
       return;
     }
+
     data.forEach((coin) => {
       const card = document.createElement("div");
       card.className = "bg-gray-800 rounded-lg p-4 shadow hover:shadow-lg transition";
@@ -171,6 +182,25 @@ document.addEventListener("DOMContentLoaded", () => {
     return (volumeToMC * 0.5) + (priceMomentum * 0.3) + (marketCapFactor * 0.2);
   }
 
+  function calculateRSI(prices, period = 14) {
+  if (!prices || prices.length < period + 1) return 0;
+
+  let gains = 0;
+  let losses = 0;
+
+  for (let i = 1; i <= period; i++) {
+    const change = prices[prices.length - i] - prices[prices.length - i - 1];
+    if (change > 0) gains += change;
+    else losses -= change;
+  }
+
+  if (losses === 0) return 100; // Max RSI if no losses
+
+  const rs = gains / losses;
+  return 100 - (100 / (1 + rs));
+}
+
+
   function renderHypeLeaderboard(filtered) {
     const hypeList = document.getElementById("hype-list");
     hypeList.innerHTML = "";
@@ -202,13 +232,37 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 }
 
+ function getVolumeSpikeScore(coin) {
+  const volume = coin.total_volume || 0;
+  const marketCap = coin.market_cap || 1;
+
+  // Approximate 7-day avg volume as 24h volume / 7 (fallback)
+  // In production, ideally fetch from full market data
+  const avgVolume = (volume / 7) || 1;
+
+  return volume / avgVolume; // Higher = bigger spike
+}
+
+
 
   function filterAndDisplay() {
     const searchTerm = searchInput.value.toLowerCase();
     let filtered = coins.filter(coin => coin.name.toLowerCase().includes(searchTerm));
+    
     if (favoritesFilter.checked) {
       filtered = filtered.filter(coin => favorites.includes(coin.id));
     }
+
+    if (rsiFilter.checked) {
+      filtered = filtered.filter(coin => {
+      const rsi = calculateRSI(coin.sparkline_in_7d.price);
+      return coin.current_price > rsi;  // "price above RSI"
+    });
+
+    if (volumeSpikeFilter.checked) {
+      filtered = filtered.filter(coin => getVolumeSpikeScore(coin) >= 3);
+      }
+  }
     const sortOption = sortSelect.value;
     
     switch (sortOption) {
@@ -243,6 +297,12 @@ document.addEventListener("DOMContentLoaded", () => {
       case "name":
         filtered.sort((a, b) => a.name.localeCompare(b.name));
         break;
+
+      case "volume_spike":
+      filtered.sort((a, b) => {
+        return getVolumeSpikeScore(b) - getVolumeSpikeScore(a);
+        });
+      break;
 
       // NEW: Hype Score (Volume / Market Cap)
       case "hype":
@@ -342,6 +402,9 @@ function updatePortfolioSummary() {
 
   const change = total - yesterdayValue;
   const percent = (change / yesterdayValue) * 100;
+
+
+  
 
   portfolioTotal.textContent = `$${total.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
   portfolioChange.textContent = `${percent >= 0 ? '▲' : '▼'} ${percent.toFixed(2)}% today`;
